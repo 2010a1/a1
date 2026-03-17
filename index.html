@@ -907,8 +907,15 @@
                 const getRes = await fetch(`${KV_REST_API_URL}/get/${key}`, {
                     headers: { Authorization: `Bearer ${KV_REST_API_TOKEN}` }
                 });
-                const getData = await getRes.json();
-                let results = getData.result ? JSON.parse(getData.result) : [];
+
+                let results = [];
+                if (getRes.ok) {
+                    const getData = await getRes.json();
+                    results = getData.result ? JSON.parse(getData.result) : [];
+                } else if (getRes.status !== 404) {
+                    console.error("Lỗi GET khi lưu:", getRes.status);
+                    return;
+                }
 
                 results.push(newEntry);
 
@@ -935,7 +942,7 @@
             }
         }
 
-        // ==================== TẢI BẢNG XẾP HẠNG ====================
+        // ==================== TẢI BẢNG XẾP HẠNG (ĐÃ FIX 404) ====================
         async function loadLeaderboard() {
             const subject = document.getElementById('subject-filter').value;
             if (!subject) {
@@ -944,7 +951,7 @@
                 return;
             }
 
-            const mode = 'challenge'; // Bạn có thể thay bằng select nếu muốn tách BXH practice/challenge
+            const mode = 'challenge'; // fix cứng cho thử thách, bạn có thể thêm select mode sau
             const key = getResultsKey(subject, mode);
 
             const tbody = document.getElementById('leaderboard-body');
@@ -968,12 +975,24 @@
                 const res = await fetch(`${KV_REST_API_URL}/get/${key}`, {
                     headers: { Authorization: `Bearer ${KV_REST_API_TOKEN}` }
                 });
-                const data = await res.json();
-                let results = data.result ? JSON.parse(data.result) : [];
+
+                let results = [];
+
+                if (res.ok) {
+                    const data = await res.json();
+                    results = data.result ? JSON.parse(data.result) : [];
+                } else if (res.status === 404) {
+                    // Key chưa tồn tại → coi như rỗng, không lỗi
+                    results = [];
+                } else {
+                    // Lỗi khác (401, 500,...)
+                    throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+                }
 
                 if (results.length === 0) {
                     emptyMsg.classList.remove('hidden');
                     table.classList.add('hidden');
+                    info.classList.add('hidden');
                     return;
                 }
 
@@ -990,17 +1009,20 @@
                         <td class="px-6 py-4 text-center font-bold text-[var(--success-color)]">${r.score}</td>
                         <td class="px-6 py-4 text-center">${r.timeSeconds} giây</td>
                         <td class="px-6 py-4 text-center">${r.correct} / ${r.total}</td>
-                        <td class="px-6 py-4">${subject} (${r.mode})</td>
+                        <td class="px-6 py-4">${subject} (${r.mode || mode})</td>
                     `;
                     tbody.appendChild(tr);
                     rank++;
                 });
 
-                info.textContent = `Top ${Math.min(50, results.length)} kết quả môn ${subject}`;
-                info.classList.remove('hidden');
+                document.getElementById('leaderboard-table').classList.remove('hidden');
+                document.getElementById('leaderboard-info').textContent = `Top ${Math.min(50, results.length)} kết quả môn ${subject}`;
+                document.getElementById('leaderboard-info').classList.remove('hidden');
+                document.getElementById('leaderboard-empty').classList.add('hidden');
+
             } catch (err) {
                 console.error("Lỗi tải BXH:", err);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-red-600">Lỗi tải dữ liệu (kiểm tra token/URL)</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-red-600">Lỗi tải dữ liệu (xem console)</td></tr>';
             }
         }
 
