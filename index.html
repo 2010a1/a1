@@ -878,70 +878,61 @@
         }
 
         // ==================== LƯU KẾT QUẢ ====================
-        async function recordResult(correct, total, mode, score) {
-            if (!studentName) {
-                console.warn("Không lưu: chưa có tên học sinh");
-                return;
-            }
-
-            if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
-                console.warn("Không lưu: thiếu cấu hình Redis");
-                return;
-            }
-
-            const subject = SUBJECTS[currentSubject]?.name || currentSubject;
-            const key = getResultsKey(subject, mode);
-
-            const newEntry = {
-                name: studentName.trim(),
-                score: parseFloat(score.toFixed(1)),
-                correct: Number(correct),
-                total: Number(total),
-                timeSeconds: Math.floor((Date.now() - startTime) / 1000),
-                timestamp: new Date().toISOString(),
-                mode: mode
-            };
-
-            try {
-                // Lấy danh sách cũ
-                const getRes = await fetch(`${KV_REST_API_URL}/get/${key}`, {
-                    headers: { Authorization: `Bearer ${KV_REST_API_TOKEN}` }
-                });
-
-                let results = [];
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    results = getData.result ? JSON.parse(getData.result) : [];
-                } else if (getRes.status !== 404) {
-                    console.error("Lỗi GET khi lưu:", getRes.status);
-                    return;
-                }
-
-                results.push(newEntry);
-
-                // Lưu lại
-                const setRes = await fetch(`${KV_REST_API_URL}/set/${key}`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${KV_REST_API_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        value: JSON.stringify(results),
-                        ex: 7776000 // 90 ngày
-                    })
-                });
-
-                if (setRes.ok) {
-                    console.log(`Đã lưu kết quả ${mode} cho môn ${subject}`);
-                } else {
-                    console.error("Lỗi SET:", await setRes.text());
-                }
-            } catch (err) {
-                console.error("Lỗi lưu Redis:", err);
-            }
+async function recordResult(correct, total, mode, score) {
+    if (!studentName) {
+        console.warn("Không lưu: chưa có tên học sinh");
+        return;
+    }
+    if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+        console.warn("Không lưu: thiếu cấu hình Redis");
+        return;
+    }
+    const subject = SUBJECTS[currentSubject]?.name || currentSubject;
+    const key = getResultsKey(subject, mode);
+    const newEntry = {
+        name: studentName.trim(),
+        score: parseFloat(score.toFixed(1)),
+        correct: Number(correct),
+        total: Number(total),
+        timeSeconds: Math.floor((Date.now() - startTime) / 1000),
+        timestamp: new Date().toISOString(),
+        mode: mode
+    };
+    try {
+        // Lấy danh sách cũ
+        const getRes = await fetch(`${KV_REST_API_URL}/get/${key}`, {
+            headers: { Authorization: `Bearer ${KV_REST_API_TOKEN}` }
+        });
+        let results = [];
+        if (getRes.ok) {
+            const getData = await getRes.json();
+            results = getData.result ? JSON.parse(getData.result) : [];
+        } else if (getRes.status !== 404) {
+            console.error("Lỗi GET khi lưu:", getRes.status);
+            return;
         }
-
+        results.push(newEntry);
+        // Lưu lại
+        const setRes = await fetch(`${KV_REST_API_URL}/set/${key}`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${KV_REST_API_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                value: JSON.stringify(results),
+                ex: 7776000 // 90 ngày
+            })
+        });
+        if (setRes.ok) {
+            console.log(`Đã lưu kết quả ${mode} cho môn ${subject}`);
+        } else {
+            console.error("Lỗi SET:", await setRes.text());
+        }
+    } catch (err) {
+        console.error("Lỗi lưu Redis:", err);
+    }
+}
         // ==================== TẢI BẢNG XẾP HẠNG (ĐÃ FIX 404) ====================
         async function loadLeaderboard() {
             const subject = document.getElementById('subject-filter').value;
