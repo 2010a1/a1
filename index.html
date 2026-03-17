@@ -25,6 +25,14 @@
         }
     </script>
 
+    <!-- Vercel sẽ thay thế giá trị thật khi build -->
+    <script>
+        window.ENV = {
+            KV_REST_API_URL: "{{KV_REST_API_URL}}",
+            KV_REST_API_TOKEN: "{{KV_REST_API_TOKEN}}"
+        };
+    </script>
+
     <style>
         :root {
             --primary-color: #1C3FAA;
@@ -575,7 +583,7 @@
         <div id="leaderboard-area" class="hidden mt-8">
             <div class="card p-8">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-                    <h2 class="text-3xl font-bold text-[var(--primary-color)]">🏆 Bảng Xếp Hạng (Thử thách)</h2>
+                    <h2 class="text-3xl font-bold text-[var(--primary-color)]">🏆 Bảng Xếp Hạng</h2>
                     <div class="flex items-center gap-4">
                         <select id="subject-filter" class="px-5 py-3 border rounded-xl bg-white text-gray-700 font-medium focus:outline-none focus:border-[var(--primary-color)] min-w-[180px]">
                             <option value="" selected disabled>Chọn môn để xem xếp hạng</option>
@@ -645,8 +653,6 @@
         let currentMode = null;
         let allQuestions = [];
         let questionsByType = {};
-        let currentType = null;
-        let remainingTypes = [];
         let currentQuizQuestions = [];
         let currentIndex = 0;
         let startTime = 0;
@@ -656,7 +662,6 @@
         let currentMusicIframe = null;
         let doneCorrectQuestions = {};
 
-        // Load done correct
         function loadDoneCorrect() {
             const saved = localStorage.getItem('doneCorrectQuestions');
             if (saved) doneCorrectQuestions = JSON.parse(saved);
@@ -859,33 +864,36 @@
             document.getElementById('image-modal').classList.remove('show');
         };
 
-        // ==================== VERCEL KV CONFIG ====================
-        // Khi deploy lên Vercel, dùng process.env
-        // Test local: thay bằng giá trị thật từ Vercel dashboard (Storage → KV → Connect → REST API)
-        const KV_REST_API_URL = window.location.hostname.includes('vercel.app') 
-            ? process.env.KV_REST_API_URL 
-            : 'https://YOUR_KV_NAME-YOUR_REGION.upstash.io'; // THAY BẰNG URL THẬT KHI TEST LOCAL
+        // ==================== VERCEL KV / REDIS CONFIG ====================
+        const KV_REST_API_URL = window.ENV?.KV_REST_API_URL || '';
+        const KV_REST_API_TOKEN = window.ENV?.KV_REST_API_TOKEN || '';
 
-        const KV_REST_API_TOKEN = window.location.hostname.includes('vercel.app') 
-            ? process.env.KV_REST_API_TOKEN 
-            : 'YOUR_READ_WRITE_TOKEN_HERE'; // THAY BẰNG TOKEN THẬT KHI TEST LOCAL
+        if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+            console.warn("Thiếu KV_REST_API_URL hoặc KV_REST_API_TOKEN → bảng xếp hạng sẽ không hoạt động. Hãy connect Redis trong Vercel.");
+        }
 
-        function getResultsKey(subject) {
-            return `quiz_results_${subject.replace(/\s+/g, '_').toLowerCase()}`;
+        function getResultsKey(subject, mode) {
+            const subjectClean = subject.replace(/\s+/g, '_').toLowerCase();
+            return `quiz_results_${subjectClean}_${mode}`;
         }
 
         // ==================== LƯU KẾT QUẢ ====================
         async function recordResult(correct, total, mode, score) {
             if (!studentName) {
-                console.warn("Không lưu kết quả: chưa có tên học sinh");
+                console.warn("Không lưu: chưa có tên học sinh");
+                return;
+            }
+
+            if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+                console.warn("Không lưu: thiếu cấu hình Redis");
                 return;
             }
 
             const subject = SUBJECTS[currentSubject]?.name || currentSubject;
-            const key = getResultsKey(subject);
+            const key = getResultsKey(subject, mode);
 
             const newEntry = {
-                name: studentName,
+                name: studentName.trim(),
                 score: parseFloat(score.toFixed(1)),
                 correct: Number(correct),
                 total: Number(total),
@@ -905,7 +913,7 @@
                 results.push(newEntry);
 
                 // Lưu lại
-                await fetch(`${KV_REST_API_URL}/set/${key}`, {
+                const setRes = await fetch(`${KV_REST_API_URL}/set/${key}`, {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${KV_REST_API_TOKEN}`,
@@ -913,14 +921,17 @@
                     },
                     body: JSON.stringify({
                         value: JSON.stringify(results),
-                        ex: 60 * 60 * 24 * 90  // expire sau 90 ngày
+                        ex: 7776000 // 90 ngày
                     })
                 });
 
-                alert(`Kết quả ${mode === 'practice' ? 'luyện tập' : 'thử thách'} đã được ghi lên bảng xếp hạng!`);
-            } catch (error) {
-                console.error("Lỗi lưu KV:", error);
-                alert("Không lưu được kết quả. Kiểm tra console (F12).");
+                if (setRes.ok) {
+                    console.log(`Đã lưu kết quả ${mode} cho môn ${subject}`);
+                } else {
+                    console.error("Lỗi SET:", await setRes.text());
+                }
+            } catch (err) {
+                console.error("Lỗi lưu Redis:", err);
             }
         }
 
@@ -928,12 +939,13 @@
         async function loadLeaderboard() {
             const subject = document.getElementById('subject-filter').value;
             if (!subject) {
-                document.getElementById('leaderboard-info').textContent = "Chọn môn để xem xếp hạng";
-                document.getElementById('leaderboard-info').classList.remove('hidden');
+                document.getElementById('leaderboard-placeholder').classList.remove('hidden');
+                document.getElementById('leaderboard-table').classList.add('hidden');
                 return;
             }
 
-            const key = getResultsKey(subject);
+            const mode = 'challenge'; // Bạn có thể thay bằng select nếu muốn tách BXH practice/challenge
+            const key = getResultsKey(subject, mode);
 
             const tbody = document.getElementById('leaderboard-body');
             const table = document.getElementById('leaderboard-table');
@@ -941,11 +953,16 @@
             const emptyMsg = document.getElementById('leaderboard-empty');
             const info = document.getElementById('leaderboard-info');
 
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12">Đang tải bảng xếp hạng...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12">Đang tải...</td></tr>';
             table.classList.remove('hidden');
             placeholder.classList.add('hidden');
             emptyMsg.classList.add('hidden');
             info.classList.add('hidden');
+
+            if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-red-600">Chưa cấu hình Redis</td></tr>';
+                return;
+            }
 
             try {
                 const res = await fetch(`${KV_REST_API_URL}/get/${key}`, {
@@ -962,28 +979,28 @@
 
                 results.sort((a, b) => b.score - a.score || a.timeSeconds - b.timeSeconds);
 
-                info.textContent = `Top ${Math.min(results.length, 50)} kết quả môn ${subject}`;
-                info.classList.remove('hidden');
-
                 tbody.innerHTML = '';
                 let rank = 1;
-                results.slice(0, 50).forEach((r) => {
+                results.slice(0, 50).forEach(r => {
                     const tr = document.createElement('tr');
-                    tr.className = (rank <= 3) ? 'bg-yellow-50 hover:bg-yellow-100 transition' : 'hover:bg-gray-50 transition';
+                    tr.className = rank <= 3 ? 'bg-yellow-50' : '';
                     tr.innerHTML = `
                         <td class="px-6 py-4 font-bold text-center">${rank}</td>
-                        <td class="px-6 py-4">${r.name}${r.name === studentName ? ' <span class="text-blue-600 font-medium">(Bạn)</span>' : ''}</td>
+                        <td class="px-6 py-4">${r.name}${r.name === studentName ? ' <span class="text-blue-600">(Bạn)</span>' : ''}</td>
                         <td class="px-6 py-4 text-center font-bold text-[var(--success-color)]">${r.score}</td>
                         <td class="px-6 py-4 text-center">${r.timeSeconds} giây</td>
                         <td class="px-6 py-4 text-center">${r.correct} / ${r.total}</td>
-                        <td class="px-6 py-4">${subject}</td>
+                        <td class="px-6 py-4">${subject} (${r.mode})</td>
                     `;
                     tbody.appendChild(tr);
                     rank++;
                 });
-            } catch (error) {
-                console.error("Lỗi tải BXH:", error);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-red-600">Lỗi tải dữ liệu. Kiểm tra console.</td></tr>';
+
+                info.textContent = `Top ${Math.min(50, results.length)} kết quả môn ${subject}`;
+                info.classList.remove('hidden');
+            } catch (err) {
+                console.error("Lỗi tải BXH:", err);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-red-600">Lỗi tải dữ liệu (kiểm tra token/URL)</td></tr>';
             }
         }
 
@@ -1050,7 +1067,7 @@
 
                 if (!allQuestions.length) return false;
 
-                if (isEnglish) {
+                if (currentSubject === "tieng-anh") {
                     questionsByType = {};
                     allQuestions.forEach(q => {
                         if (!questionsByType[q.type]) questionsByType[q.type] = [];
@@ -1089,9 +1106,7 @@
             if (mode === 'practice') {
                 document.getElementById('practice-mode').classList.remove('hidden');
                 currentQuizQuestions = isEnglish ? [] : [...allQuestions];
-                if (isEnglish) {
-                    // Nếu có logic riêng cho Tiếng Anh thì giữ
-                } else {
+                if (!isEnglish) {
                     shuffle(currentQuizQuestions);
                     renderPracticeQuestions();
                 }
@@ -1383,6 +1398,9 @@
             document.getElementById('no-data-modal').classList.remove('show');
             backToHome();
         }
+
+        // Khởi tạo ban đầu
+        showMusicConfirm();
     </script>
 </body>
 </html>
