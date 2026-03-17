@@ -864,11 +864,10 @@
             document.getElementById('image-modal').classList.remove('show');
         };
 
-        // ==================== VERCEL KV / REDIS CONFIG ====================
 // ==================== VERCEL KV / REDIS CONFIG ====================
-// Hardcode tạm giá trị thật để test (sau khi chạy ổn thì quay lại dùng window.ENV)
-const KV_REST_API_URL = "https://eternal-seagull-75058.upstash.";
-const KV_REST_API_TOKEN = "gQAAAAAAASUyAAIncDI3M2Y3ZDFkYmZkYzQ0Nzc5ODU4YTZhN2VmMjQwMzkwNXAyNzUwNTg";
+// Upstash Redis - database mới wealthy-koi-74932 (tạo ngày ~17/03/2026)
+const KV_REST_API_URL = "https://wealthy-koi-74932.upstash.io";
+const KV_REST_API_TOKEN = "gQAAAAAAASS0AAIncDJhMTM3YzUwNzgyZDU0YWVkOTgxYWYxZTVmMGM4MDAzMHAyNzQ5MzI";
 
 if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
     console.warn("Thiếu KV_REST_API_URL hoặc KV_REST_API_TOKEN → bảng xếp hạng sẽ không hoạt động.");
