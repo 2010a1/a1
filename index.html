@@ -865,18 +865,19 @@
         };
 
         // ==================== VERCEL KV / REDIS CONFIG ====================
-        const KV_REST_API_URL = window.ENV?.KV_REST_API_URL || '';
-        const KV_REST_API_TOKEN = window.ENV?.KV_REST_API_TOKEN || '';
+// ==================== VERCEL KV / REDIS CONFIG ====================
+// Hardcode tạm giá trị thật để test (sau khi chạy ổn thì quay lại dùng window.ENV)
+const KV_REST_API_URL = "https://redis-11639.crce185.ap-seast-1-1.ec2.cloud.redislabs.com";
+const KV_REST_API_TOKEN = "Bearer 9kLWsGnh0sKZNXiPP2YLnWqHrW3G95yg";
 
-        if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
-            console.warn("Thiếu KV_REST_API_URL hoặc KV_REST_API_TOKEN → bảng xếp hạng sẽ không hoạt động. Hãy connect Redis trong Vercel.");
-        }
+if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
+    console.warn("Thiếu KV_REST_API_URL hoặc KV_REST_API_TOKEN → bảng xếp hạng sẽ không hoạt động.");
+}
 
-        function getResultsKey(subject, mode) {
-            const subjectClean = subject.replace(/\s+/g, '_').toLowerCase();
-            return `quiz_results_${subjectClean}_${mode}`;
-        }
-
+function getResultsKey(subject, mode) {
+    const subjectClean = subject.replace(/\s+/g, '_').toLowerCase();
+    return `quiz_results_${subjectClean}_${mode}`;
+}
         // ==================== LƯU KẾT QUẢ ====================
 async function recordResult(correct, total, mode, score) {
     if (!studentName) {
