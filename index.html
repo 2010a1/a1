@@ -26,6 +26,19 @@
         }
     </script>
     <style>
+        .modal {
+    pointer-events: auto;
+}
+
+.setting-overlay {
+    pointer-events: auto;
+}
+.setting-overlay {
+    z-index: 1000;
+}
+.settings-btn {
+    z-index: 1100;
+}
         :root {
             --primary-color: #1C3FAA;
             --success-color: #91C714;
@@ -54,10 +67,11 @@
         .animated-bg {
             position: fixed;
             inset: 0;
-            z-index: -1;
+            z-index: -2;
             background: linear-gradient(-45deg, var(--primary-color), var(--primary-color)80%, #ffffff20);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
+            pointer-events: none;
         }
         .animated-bg::before {
             content: '';
@@ -67,11 +81,12 @@
                         radial-gradient(circle at 80% 20%, rgba(255,119,198,0.3) 0%, transparent 50%),
                         radial-gradient(circle at 40% 80%, rgba(120,219,255,0.3) 0%, transparent 50%);
             animation: float 20s ease-in-out infinite;
+            pointer-events: none;
         }
         @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-20px) rotate(180deg); } }
 
-        .container { max-width: 900px; margin: 0 auto; padding: 1rem; position: relative; z-index: 1; }
+        .container { max-width: 900px; margin: 0 auto; padding: 1rem; position: relative; z-index: 5; }
         .card {
             background: var(--card-bg);
             border-radius: 20px;
@@ -80,6 +95,8 @@
             border: 1px solid rgba(255,255,255,0.2);
             backdrop-filter: blur(10px);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 10;
         }
         .card:hover { transform: translateY(-5px); box-shadow: 0 30px 80px rgba(0,0,0,0.15); }
 
@@ -90,16 +107,20 @@
             text-align: center;
             position: relative;
             overflow: hidden;
+            z-index: 10;
         }
         .header h1 { font-size: 2.8rem; font-weight: 800; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 
-        .mode-card { padding: 50px 24px; text-align: center; background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7)); backdrop-filter: blur(20px); }
-        .mode-btn, .submit-btn, button {
+        .mode-card { padding: 50px 24px; text-align: center; background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7)); backdrop-filter: blur(20px); z-index: 10; }
+
+        button, .mode-btn, .submit-btn, .option, .option label, input[type="radio"], input[type="text"], .settings-btn, .close-modal, select {
             pointer-events: auto !important;
             cursor: pointer !important;
             position: relative;
-            z-index: 10;
+            z-index: 30;
+            user-select: none;
         }
+
         .mode-btn {
             display: block;
             width: 100%;
@@ -129,6 +150,7 @@
             overflow-wrap: break-word;
             word-break: break-word;
             hyphens: auto;
+            z-index: 10;
         }
         .question-num { font-size: 1.5rem; font-weight: 800; color: var(--primary-color); margin-bottom: 12px; text-align: center; }
         .question-text {
@@ -197,6 +219,11 @@
             pointer-events: auto !important;
         }
         .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(28,63,170,0.4); }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .feedback { margin-top: 24px; padding: 20px; border-radius: 14px; font-size: 1.2rem; text-align: center; font-weight: 700; backdrop-filter: blur(10px); opacity: 0; transform: translateY(15px); transition: all 0.5s; }
         .feedback.show { opacity: 1; transform: translateY(0); }
@@ -221,13 +248,46 @@
         }
         .settings-icon { width: 28px; height: 28px; background: url('https://cdn-icons-png.flaticon.com/512/2040/2040504.png') no-repeat center; background-size: contain; }
 
-        .setting-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; pointer-events: auto; }
-        .setting-overlay.show { display: flex; }
+        .setting-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 1000; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            pointer-events: none; 
+        }
+        .setting-overlay.show { 
+            display: flex; 
+            pointer-events: auto; 
+        }
 
-        .theme-selector { background: white; padding: 28px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(10px); text-align: center; max-width: 95%; border: 1px solid #e5e7eb; pointer-events: auto; }
+        .theme-selector { 
+            background: white; 
+            padding: 28px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            backdrop-filter: blur(10px); 
+            text-align: center; 
+            max-width: 95%; 
+            border: 1px solid #e5e7eb; 
+            pointer-events: auto; 
+            position: relative;
+            z-index: 1002;
+        }
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; pointer-events: auto; }
-        .modal.show { display: flex; }
+        .modal { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.9); 
+            z-index: 9999; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            pointer-events: none; 
+        }
+        .modal.show { display: flex; pointer-events: auto; }
 
         .timer { pointer-events: none; }
 
@@ -255,6 +315,11 @@
             color: white;
             cursor: pointer;
             z-index: 10000;
+        }
+
+        #quiz-area, #practice-mode, #challenge-mode {
+            position: relative;
+            z-index: 15;
         }
 
         @media (max-width: 768px) {
@@ -519,59 +584,69 @@
         let practiceSubmitted = false;
         let challengeSubmitted = false;
 
-function escapeHtml(unsafe) {
-    if (!unsafe) return '';
-    return String(unsafe)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         function getUserPrefix() {
             return (studentName || 'guest').replace(/\s+/g, '_').toLowerCase();
-        }
-
-        function getUsedKey(type) {
-            return `used_${currentSubject || 'default'}_${type}_${getUserPrefix()}`;
         }
 
         function getCorrectKey(type) {
             return `correct_${currentSubject || 'default'}_${type}_${getUserPrefix()}`;
         }
 
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         function getRandom50PercentByType(typeQuestions) {
-            if (!typeQuestions.length) return [];
+            if (!typeQuestions || !typeQuestions.length) return [];
 
             let typeKey = 'TL';
-            if (typeQuestions[0].type.toUpperCase().includes('TN')) typeKey = 'TN';
-            else if (typeQuestions[0].type.toUpperCase().includes('DS') || typeQuestions[0].type.includes('ĐS') || typeQuestions[0].type === 'DUNGSAI') typeKey = 'DS';
+            const firstType = typeQuestions[0]?.type?.toUpperCase() || '';
+            if (firstType.includes('TN') || firstType === 'TRACNGHIEM') {
+                typeKey = 'TN';
+            } else if (firstType.includes('DS') || firstType.includes('ĐS') || firstType === 'DUNGSAI') {
+                typeKey = 'DS';
+            }
 
-            const usedKey = getUsedKey(typeKey);
             const correctKey = getCorrectKey(typeKey);
-
-            let used = JSON.parse(localStorage.getItem(usedKey)) || [];
             let correct = JSON.parse(localStorage.getItem(correctKey)) || [];
 
-            const need = Math.max(1, Math.ceil(typeQuestions.length * 0.5));
+            const total = typeQuestions.length;
+            const need = Math.max(1, Math.ceil(total * 0.5));
 
-            let available = typeQuestions.filter(q => !correct.includes(q.question));
+            let available = typeQuestions.filter(q => !correct.includes(q.id));
 
             if (available.length < need) {
-                const extra = typeQuestions.filter(q => correct.includes(q.question) && !used.includes(q.question));
-                available = [...available, ...extra];
+                const alreadyCorrect = typeQuestions.filter(q => correct.includes(q.id));
+                shuffleArray(alreadyCorrect);
+                const stillNeed = need - available.length;
+                available = available.concat(alreadyCorrect.slice(0, stillNeed));
             }
 
             if (available.length < need) {
-                const fallback = typeQuestions.filter(q => !used.includes(q.question));
-                available = [...available, ...fallback];
+                const remaining = typeQuestions.filter(q => !available.some(a => a.id === q.id));
+                shuffleArray(remaining);
+                const stillNeed = need - available.length;
+                available = available.concat(remaining.slice(0, stillNeed));
             }
 
-            const selected = available.sort(() => Math.random() - 0.5).slice(0, need);
+            shuffleArray(available);
+            const selected = available.slice(0, need);
 
-            const newUsed = [...used, ...selected.map(q => q.question)];
-            localStorage.setItem(usedKey, JSON.stringify([...new Set(newUsed)]));
+            console.log(`Loại ${typeKey}: tổng ${total} → cần ~${need} → chọn được ${selected.length}`);
 
             return selected;
         }
@@ -583,11 +658,7 @@ function escapeHtml(unsafe) {
             const originalCorrectIndex = copy.correct;
 
             const indices = [...Array(copy.options.length).keys()];
-            for (let i = indices.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [indices[i], indices[j]] = [indices[j], indices[i]];
-            }
-
+            shuffleArray(indices);
             copy.options = indices.map(i => copy.options[i]);
             copy.correct = indices.indexOf(originalCorrectIndex);
 
@@ -609,7 +680,7 @@ function escapeHtml(unsafe) {
 
                 const text = await res.text();
                 allQuestions = text.trim().split('\n')
-                    .map(line => {
+                    .map((line, index) => {
                         line = line.trim();
                         if (!line || line.startsWith('//') || line.startsWith('#')) return null;
 
@@ -681,7 +752,15 @@ function escapeHtml(unsafe) {
                             image = parts.find(p => p && p.startsWith('http')) || null;
                         }
 
-                        return { type, question, options, correct, explain, image };
+                        return { 
+                            id: `${currentSubject || 'default'}_${index}`,
+                            type, 
+                            question, 
+                            options, 
+                            correct, 
+                            explain, 
+                            image 
+                        };
                     })
                     .filter(q => q && q.question?.length > 5);
 
@@ -763,9 +842,9 @@ function escapeHtml(unsafe) {
         }
 
         function goToHome() {
+            stopTimer();
             hideAllScreens();
             document.getElementById('home-screen').classList.remove('hidden');
-            // KHÔNG gọi stopMusic() → giữ nhạc nền khi về home
             practiceSubmitted = false;
             challengeSubmitted = false;
             currentQuizQuestions = [];
@@ -952,7 +1031,6 @@ function escapeHtml(unsafe) {
             currentMusicIframe = iframe;
             document.getElementById('music-bar').style.display = 'flex';
 
-            // Unmute sau 1.5s để tăng khả năng autoplay thành công
             setTimeout(() => {
                 if (currentMusicIframe) {
                     currentMusicIframe.contentWindow?.postMessage(
@@ -1014,13 +1092,11 @@ function escapeHtml(unsafe) {
             hideAllScreens();
             document.getElementById('quiz-area').classList.remove('hidden');
 
-            // Reset trạng thái
             practiceSubmitted = false;
             challengeSubmitted = false;
             currentQuizQuestions = [];
             currentIndex = 0;
 
-            // Ẩn cả hai mode trước khi show mode mới
             document.getElementById('practice-mode').classList.add('hidden');
             document.getElementById('challenge-mode').classList.add('hidden');
 
@@ -1068,7 +1144,8 @@ function escapeHtml(unsafe) {
         function renderOptions(q, idx, isChallenge = false) {
             if (!q.options || q.options.length === 0) return '';
 
-            let html = `<div class="flex flex-col gap-5 mt-6" data-correct="${parseInt(q.correct) || 0}">`;
+            const correctVal = Number.isInteger(q.correct) ? q.correct : 0;
+            let html = `<div class="flex flex-col gap-5 mt-6" data-correct="${correctVal}">`;
 
             q.options.forEach((rawOpt, i) => {
                 let opt = (rawOpt || '').trim();
@@ -1105,7 +1182,7 @@ function escapeHtml(unsafe) {
                 card.className = 'question-card';
 
                 let html = `<div class="question-num">Câu ${idx + 1}</div>`;
-                html += `<div class="question-text">${q.question}</div>`;  // KHÔNG escape → giữ <u>
+                html += `<div class="question-text">${q.question}</div>`;
 
                 if (q.image) html += `<img src="${q.image}" class="question-image" onclick="openImage('${q.image}')">`;
 
@@ -1128,6 +1205,7 @@ function escapeHtml(unsafe) {
         document.getElementById('submit-practice').addEventListener('click', async () => {
             if (practiceSubmitted) return;
             practiceSubmitted = true;
+            document.getElementById('submit-practice').disabled = true;
 
             let correctCount = 0;
             let allAnswered = true;
@@ -1146,7 +1224,7 @@ function escapeHtml(unsafe) {
                 if (q.options?.length) {
                     const choiceIndex = radio ? parseInt(radio.value) : -1;
                     const optionsContainer = card.querySelector('.flex.flex-col.gap-5.mt-6');
-                    const shuffledCorrect = parseInt(optionsContainer ? optionsContainer.dataset.correct : '0');
+                    const shuffledCorrect = Number.isInteger(q.correct) ? q.correct : 0;
                     isCorrect = choiceIndex === shuffledCorrect;
 
                     card.querySelectorAll('.option').forEach((label, i) => {
@@ -1155,8 +1233,9 @@ function escapeHtml(unsafe) {
                         label.querySelector('input').disabled = true;
                     });
                 } else if (textInput) {
-                    const userAns = textInput.value.trim().toLowerCase();
-                    const correctAns = String(q.correct).toLowerCase();
+                    const normalize = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                    const userAns = normalize(textInput.value);
+                    const correctAns = normalize(String(q.correct));
                     isCorrect = userAns === correctAns;
 
                     textInput.disabled = true;
@@ -1174,15 +1253,16 @@ function escapeHtml(unsafe) {
                     const key = getCorrectKey(typeKey);
                     let correctArr = JSON.parse(localStorage.getItem(key)) || [];
 
-                    if (!correctArr.includes(q.question)) {
-                        correctArr.push(q.question);
-                        localStorage.setItem(key, JSON.stringify([...new Set(correctArr)]));
+                    if (!correctArr.includes(q.id)) {
+                    correctArr.push(q.id);
+                    localStorage.setItem(key, JSON.stringify(correctArr));
                     }
                 }
             });
 
             if (!allAnswered) {
                 practiceSubmitted = false;
+                document.getElementById('submit-practice').disabled = false;
                 return showInfoModal("⚠️ Chưa hoàn thành", "Vui lòng trả lời tất cả câu hỏi!");
             }
 
@@ -1224,7 +1304,7 @@ function escapeHtml(unsafe) {
             const q = currentQuizQuestions[currentIndex];
             document.getElementById('challenge-progress').textContent = `Câu ${currentIndex + 1} / ${currentQuizQuestions.length}`;
 
-            let html = `<div class="question-text">${q.question}</div>`;  // KHÔNG escape
+            let html = `<div class="question-text">${q.question}</div>`;
 
             if (q.image) html += `<img src="${q.image}" class="question-image" onclick="openImage('${q.image}')">`;
 
@@ -1245,6 +1325,7 @@ function escapeHtml(unsafe) {
         document.getElementById('submit-current').addEventListener('click', async () => {
             if (challengeSubmitted) return;
             challengeSubmitted = true;
+            document.getElementById('submit-current').disabled = true;
 
             const q = currentQuizQuestions[currentIndex];
             let isCorrect = false;
@@ -1255,12 +1336,13 @@ function escapeHtml(unsafe) {
                 const selected = document.querySelector('#current-question input[name="challenge_q"]:checked');
                 if (!selected) {
                     challengeSubmitted = false;
+                    document.getElementById('submit-current').disabled = false;
                     return showInfoModal("Chưa chọn", "Vui lòng chọn đáp án!");
                 }
                 userChoiceIndex = parseInt(selected.value);
 
                 const optionsContainer = document.querySelector('#current-question .flex.flex-col.gap-5.mt-6');
-                const correctAfterShuffle = parseInt(optionsContainer ? optionsContainer.dataset.correct : '0');
+                const correctAfterShuffle = Number.isInteger(q.correct) ? q.correct : 0;
                 isCorrect = userChoiceIndex === correctAfterShuffle;
 
                 document.querySelectorAll('#current-question .option').forEach(label => {
@@ -1275,9 +1357,14 @@ function escapeHtml(unsafe) {
                 const input = document.getElementById('challenge-answer');
                 if (!input.value.trim()) {
                     challengeSubmitted = false;
+                    document.getElementById('submit-current').disabled = false;
                     return showInfoModal("Chưa nhập", "Vui lòng nhập đáp án!");
                 }
-                isCorrect = input.value.trim().toLowerCase() === String(q.correct).toLowerCase();
+                const normalize = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                const userAns = normalize(input.value);
+                const correctAns = normalize(String(q.correct));
+                isCorrect = userAns === correctAns;
+
                 input.disabled = true;
                 input.style.borderColor = isCorrect ? 'var(--success-color)' : 'var(--danger-color)';
                 correctDisplay = q.correct;
@@ -1299,8 +1386,8 @@ function escapeHtml(unsafe) {
                 const key = getCorrectKey(typeKey);
                 let correctArr = JSON.parse(localStorage.getItem(key)) || [];
 
-                if (!correctArr.includes(q.question)) {
-                    correctArr.push(q.question);
+                if (!correctArr.includes(q.id)) {
+                    correctArr.push(q.id);
                     localStorage.setItem(key, JSON.stringify([...new Set(correctArr)]));
                 }
 
@@ -1338,10 +1425,7 @@ function escapeHtml(unsafe) {
             }
         });
 
-        // Volume slider (hiện tại không hoạt động - comment giải thích)
         document.getElementById('volume-slider').addEventListener('input', (e) => {
-            // Volume slider không hoạt động vì YouTube iframe không hỗ trợ postMessage setVolume
-            // Để fix thật sự cần chuyển sang dùng YT.Player API (đã load script nhưng chưa implement)
             console.log('Volume thay đổi:', e.target.value, '(chưa áp dụng được cho iframe)');
         });
 
