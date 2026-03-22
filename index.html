@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ôn tập nhanh</title>
+    <title>Azota - Ôn tập nhanh</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@15.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@15.0.0/dist/iife/sdk.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -35,10 +35,10 @@
             --text-primary: #1e293b;
             --text-secondary: #64748b;
         }
-        [data-theme="pink"] { --primary-color: #EC4899; --success-color: #10B981; --danger-color: #EF4444; }
-        [data-theme="green"] { --primary-color: #10B981; --success-color: #EC4899; --danger-color: #EF4444; }
-        [data-theme="blue"] { --primary-color: #3B82F6; --success-color: #10B981; --danger-color: #EF4444; }
-        [data-theme="red"] { --primary-color: #EF4444; --success-color: #10B981; --danger-color: #EC4899; }
+        [data-theme="pink"]   { --primary-color: #EC4899; --success-color: #10B981; --danger-color: #EF4444; }
+        [data-theme="green"]  { --primary-color: #10B981; --success-color: #EC4899; --danger-color: #EF4444; }
+        [data-theme="blue"]   { --primary-color: #3B82F6; --success-color: #10B981; --danger-color: #EF4444; }
+        [data-theme="red"]    { --primary-color: #EF4444; --success-color: #10B981; --danger-color: #EC4899; }
         [data-theme="purple"] { --primary-color: #8B5CF6; --success-color: #10B981; --danger-color: #EF4444; }
 
         body {
@@ -94,6 +94,12 @@
         .header h1 { font-size: 2.8rem; font-weight: 800; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 
         .mode-card { padding: 50px 24px; text-align: center; background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7)); backdrop-filter: blur(20px); }
+        .mode-btn, .submit-btn, button {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            position: relative;
+            z-index: 10;
+        }
         .mode-btn {
             display: block;
             width: 100%;
@@ -106,7 +112,6 @@
             background: rgba(255,255,255,0.95);
             border: 2px solid rgba(28,63,170,0.2);
             color: var(--primary-color);
-            cursor: pointer;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .mode-btn:hover {
@@ -116,11 +121,11 @@
         }
 
         .question-card {
-            padding: 24px 16px;
+            padding: 24px;
             background: rgba(255,255,255,0.95);
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             overflow-wrap: break-word;
             word-break: break-word;
             hyphens: auto;
@@ -149,13 +154,14 @@
             display: flex;
             align-items: flex-start;
             gap: 16px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             min-height: 3.5rem;
             overflow-wrap: break-word;
             word-break: break-word;
+            pointer-events: auto !important;
         }
         .option:hover { background: rgba(238,242,255,0.9); border-color: var(--primary-color); transform: translateX(4px); }
-        .option input[type="radio"] { width: 22px; height: 22px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; margin-top: 4px; }
+        .option input[type="radio"] { width: 22px; height: 22px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; margin-top: 4px; pointer-events: auto !important; }
         .option .letter {
             min-width: 60px;
             font-weight: 800;
@@ -188,10 +194,11 @@
             cursor: pointer;
             box-shadow: 0 8px 25px rgba(28,63,170,0.3);
             transition: all 0.3s;
+            pointer-events: auto !important;
         }
         .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(28,63,170,0.4); }
 
-        .feedback { margin-top: 20px; padding: 20px; border-radius: 14px; font-size: 1.2rem; text-align: center; font-weight: 700; backdrop-filter: blur(10px); opacity: 0; transform: translateY(15px); transition: all 0.5s; }
+        .feedback { margin-top: 24px; padding: 20px; border-radius: 14px; font-size: 1.2rem; text-align: center; font-weight: 700; backdrop-filter: blur(10px); opacity: 0; transform: translateY(15px); transition: all 0.5s; }
         .feedback.show { opacity: 1; transform: translateY(0); }
         .feedback.correct { background: rgba(212,237,218,0.9); color: #155724; border: 1px solid var(--success-color); }
         .feedback.wrong { background: rgba(252,232,232,0.9); color: #721c24; border: 1px solid var(--danger-color); }
@@ -200,7 +207,7 @@
             position: fixed;
             top: 16px;
             right: 16px;
-            z-index: 1000;
+            z-index: 1001;
             background: rgba(255,255,255,0.95);
             width: 56px;
             height: 56px;
@@ -210,66 +217,50 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: auto !important;
         }
         .settings-icon { width: 28px; height: 28px; background: url('https://cdn-icons-png.flaticon.com/512/2040/2040504.png') no-repeat center; background-size: contain; }
 
-        .setting-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none; align-items: center; justify-content: center; }
+        .setting-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; pointer-events: auto; }
         .setting-overlay.show { display: flex; }
 
-        .theme-selector { background: white; padding: 28px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(10px); text-align: center; max-width: 95%; border: 1px solid #e5e7eb; }
-        .theme-btn { display: inline-block; width: 48px; height: 48px; border-radius: 50%; margin: 8px; cursor: pointer; border: 4px solid transparent; transition: all 0.3s; }
-        .theme-btn.active { border-color: #fff; transform: scale(1.15); box-shadow: 0 0 20px rgba(0,0,0,0.4); }
+        .theme-selector { background: white; padding: 28px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(10px); text-align: center; max-width: 95%; border: 1px solid #e5e7eb; pointer-events: auto; }
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; pointer-events: auto; }
         .modal.show { display: flex; }
-        .modal img { max-width: 95%; max-height: 95vh; object-fit: contain; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.8); }
-        .close-modal { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; backdrop-filter: blur(8px); }
 
-        .timer { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); padding: 10px 24px; border-radius: 9999px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); font-size: 1.25rem; font-weight: 700; color: var(--primary-color); z-index: 999; backdrop-filter: blur(10px); }
+        .timer { pointer-events: none; }
 
-        .music-bar { position: fixed; bottom: 16px; right: 16px; background: rgba(255,255,255,0.95); padding: 10px 18px; border-radius: 9999px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); display: none; align-items: center; gap: 10px; z-index: 1000; }
-
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 14px 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        th { background: #f1f5f9; font-weight: 600; }
-
-        .leaderboard-row {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .leaderboard-row.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        tr.top-1 {
-            background: linear-gradient(135deg, #fefce8, #fef08a) !important;
-            transform: scale(1.02);
-            box-shadow: 0 8px 25px rgba(234,179,8,0.4) !important;
-            font-weight: 700;
-        }
-        tr.you-row {
-            background: rgba(59,130,246,0.12) !important;
-            font-weight: 600;
+        .music-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            display: none;
+            gap: 10px;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
 
-        body.low-mode * { animation: none !important; transform: none !important; box-shadow: none !important; backdrop-filter: none !important; transition: none !important; }
-        body.low-mode .card { box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; backdrop-filter: none !important; }
-        body.low-mode { background: #f9fafb !important; }
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+            z-index: 10000;
+        }
 
         @media (max-width: 768px) {
-            .header h1 { font-size: 2.2rem; }
-            .settings-btn { width: 52px; height: 52px; top: 12px; right: 12px; }
-            .timer { font-size: 1.1rem; padding: 8px 20px; }
-            .question-text { font-size: 1.05rem; line-height: 1.7; }
-            .option { font-size: 1rem; padding: 14px 16px; gap: 12px; }
-            .option .letter { min-width: 50px; font-size: 1.1rem; }
-            .option .flex-1 { font-size: 1rem; line-height: 1.65; }
-        }
-
-        @media (max-width: 480px) {
-            .letter { min-width: 48px !important; font-size: 1.05rem !important; }
-            .question-text { font-size: 1rem; line-height: 1.65; }
+            .mode-btn { padding: 20px; font-size: 18px; }
+            .option { padding: 14px; font-size: 1rem; }
+            .close-modal { top: 15px; right: 20px; font-size: 32px; }
         }
     </style>
 </head>
@@ -397,11 +388,11 @@
                 <button class="mode-btn" onclick="selectSubject('tieng-anh')">
                     <div class="text-5xl mb-3">🇬🇧</div>Tiếng Anh
                 </button>
-                <button class="mode-btn opacity-50 cursor-not-allowed" disabled>
+                <button class="mode-btn" onclick="selectSubject('lich-su')">
                     <div class="text-5xl mb-3">📜</div>Lịch sử
                 </button>
             </div>
-            <button onclick="location.reload()" class="text-gray-500 mt-6 block mx-auto">← Quay lại</button>
+            <button onclick="goToHome()" class="text-gray-500 mt-6 block mx-auto">← Quay lại</button>
         </div>
 
         <div id="mode-selection" class="hidden card mode-card">
@@ -418,15 +409,21 @@
                     <p class="text-lg mt-4 text-[var(--text-secondary)]">Từng câu - Sai → kết thúc</p>
                 </button>
             </div>
-            <button onclick="location.reload()" class="text-gray-500 mt-6 block mx-auto">← Quay lại</button>
+            <button onclick="showSubjectSelection()" class="text-gray-500 mt-6 block mx-auto">← Quay lại chọn môn</button>
         </div>
 
         <div id="quiz-area" class="hidden mt-8">
+            <div class="mb-6 px-4">
+                <button onclick="if(confirm('Thoát bài? Kết quả chưa nộp sẽ mất!')) goToHome()" 
+                        class="px-5 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-xl text-sm font-medium pointer-events-auto">
+                    ← Thoát & về trang chính
+                </button>
+            </div>
             <div id="timer-display" class="timer hidden">⏱ Thời gian: <span id="elapsed-time">0</span> giây</div>
 
             <div id="practice-mode" class="hidden">
                 <div id="practice-questions"></div>
-                <button class="submit-btn mt-10" id="submit-practice">NỘP BÀI & CHẤM ĐIỂM</button>
+                <button class="submit-btn mt-10 pointer-events-auto" id="submit-practice">NỘP BÀI & CHẤM ĐIỂM</button>
                 <div id="practice-result" class="hidden mt-12 text-center"></div>
             </div>
 
@@ -434,8 +431,8 @@
                 <div class="card question-card text-center">
                     <div id="challenge-progress" class="text-xl font-medium text-[var(--primary-color)] mb-6"></div>
                     <div id="current-question"></div>
-                    <button class="submit-btn hidden" id="submit-current">Nộp câu này</button>
-                    <button class="submit-btn hidden bg-gray-700" id="next-question">Câu tiếp theo →</button>
+                    <button class="submit-btn hidden pointer-events-auto" id="submit-current">Nộp câu này</button>
+                    <button class="submit-btn hidden bg-gray-700 pointer-events-auto" id="next-question">Câu tiếp theo →</button>
                     <div id="challenge-feedback" class="feedback hidden"></div>
                 </div>
             </div>
@@ -452,8 +449,9 @@
                             <option value="Hóa học">Hóa học</option>
                             <option value="Vật lý">Vật lý</option>
                             <option value="Tiếng Anh">Tiếng Anh</option>
+                            <option value="Lịch sử">Lịch sử</option>
                         </select>
-                        <button onclick="location.reload()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded-2xl font-medium">← quay lại</button>
+                        <button onclick="goToHome()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded-2xl font-medium pointer-events-auto">← quay lại</button>
                     </div>
                 </div>
 
@@ -497,9 +495,10 @@
 
         const SUBJECTS = {
             "sinh-hoc": { name: "Sinh học", file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/sinh-hoc.txt" },
-            "hoa-hoc":   { name: "Hóa học",   file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/hoa-hoc.txt"   },
-            "vat-ly":    { name: "Vật lý",    file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/vat-ly.txt"    },
-            "tieng-anh": { name: "Tiếng Anh", file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/tieng-anh.txt" }
+            "hoa-hoc":   { name: "Hóa học", file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/hoa-hoc.txt"   },
+            "vat-ly":    { name: "Vật lý", file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/vat-ly.txt"    },
+            "tieng-anh": { name: "Tiếng Anh", file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/tieng-anh.txt" },
+            "lich-su":   { name: "Lịch sử", file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/lich-su.txt"   }
         };
 
         let currentSubject = null;
@@ -512,6 +511,15 @@
         let studentName = localStorage.getItem('studentName') || '';
         let musicLink = localStorage.getItem('musicLink') || '';
         let currentMusicIframe = null;
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         function getUsedKey(type) {
             return `used_${currentSubject || 'default'}_${type}_${studentName.replace(/\s+/g, '_').toLowerCase()}`;
@@ -546,14 +554,17 @@
             if (!question.options || question.options.length < 2) return question;
 
             const copy = { ...question };
-            const originalCorrectValue = copy.options[copy.correct];
+            const originalCorrectIndex = copy.correct;
 
-            for (let i = copy.options.length - 1; i > 0; i--) {
+            const indices = [...Array(copy.options.length).keys()];
+            for (let i = indices.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [copy.options[i], copy.options[j]] = [copy.options[j], copy.options[i]];
+                [indices[i], indices[j]] = [indices[j], indices[i]];
             }
 
-            copy.correct = copy.options.indexOf(originalCorrectValue);
+            copy.options = indices.map(i => copy.options[i]);
+            copy.correct = indices.indexOf(originalCorrectIndex);
+
             return copy;
         }
 
@@ -571,19 +582,18 @@
                         line = line.trim();
                         if (!line || line.startsWith('//') || line.startsWith('#')) return null;
 
-                        const parts = line.split(';').map(s => s.trim()).filter(s => s !== '');
+                        const parts = line.split(';').map(s => s.trim());
+
                         if (parts.length < 3) return null;
 
                         let type = parts[0].toUpperCase();
                         let rawQuestion = parts[1];
 
-                        // Thống nhất xử lý gạch chân cho mọi môn
                         let question = rawQuestion.replace(
                             /\[underline\](.*?)\[\/underline\]/gi, 
                             '<u>$1</u>'
                         );
 
-                        // Logic đặc biệt chỉ dành cho Tiếng Anh (nếu vẫn muốn giữ)
                         if (currentSubject === 'tieng-anh') {
                             const vnParts = rawQuestion.split(/[.?!]\s*/);
                             if (vnParts.length > 1) {
@@ -610,12 +620,7 @@
 
                         if (type === 'TN' || type === 'TRACNGHIEM') {
                             if (parts.length < 4) return null;
-                            options = parts[2] ? parts[2].split('|').map(s => {
-                                let cleaned = s.trim();
-                                // Hỗ trợ gạch chân trong đáp án
-                                cleaned = cleaned.replace(/\[underline\](.*?)\[\/underline\]/gi, '<u>$1</u>');
-                                return cleaned;
-                            }).filter(Boolean) : [];
+                            options = parts[2] ? parts[2].split('|').map(s => s.trim()) : [];
 
                             const correctStr = parts[3] || '1';
                             correct = /^\d+$/.test(correctStr) ? parseInt(correctStr) - 1 : 0;
@@ -623,23 +628,23 @@
                             if (correct < 0 || correct >= options.length) correct = 0;
 
                             if (parts.length >= 5) {
-                                if (parts[4].startsWith('http')) {
+                                if (parts[4] && parts[4].startsWith('http')) {
                                     image = parts[4];
-                                    explain = parts[5] || '';
+                                    explain = parts[5] ? parts[5].trim() : '';
                                 } else {
-                                    explain = parts[4] || '';
+                                    explain = parts[4] ? parts[4].trim() : '';
                                 }
                             }
                         } else if (type === 'DS' || type.includes('ĐS') || type === 'DUNGSAI') {
                             options = ['Đúng', 'Sai'];
                             const raw = (parts[2] || '').toLowerCase().trim();
                             correct = (raw === 'đúng' || raw === 'dung' || raw === '1' || raw === 'true') ? 0 : 1;
-                            explain = parts[parts.length - 1] || '';
-                            image = parts.find(p => p.startsWith('http')) || null;
+                            explain = parts[parts.length - 1] ? parts[parts.length - 1].trim() : '';
+                            image = parts.find(p => p && p.startsWith('http')) || null;
                         } else {
-                            correct = parts[2] || '';
-                            explain = parts[3] || '';
-                            image = parts.find(p => p.startsWith('http')) || null;
+                            correct = parts[2] ? parts[2].trim() : '';
+                            explain = parts[3] ? parts[3].trim() : '';
+                            image = parts.find(p => p && p.startsWith('http')) || null;
                         }
 
                         return { type, question, options, correct, explain, image };
@@ -685,8 +690,8 @@
                 );
 
                 if (!res.ok) {
-                    const errData = await res.json();
-                    throw new Error(errData.message || res.status);
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || `HTTP ${res.status}`);
                 }
                 console.log("Lưu kết quả thành công");
             } catch (err) {
@@ -721,6 +726,12 @@
             document.getElementById('leaderboard-area').classList.add('hidden');
         }
 
+        function goToHome() {
+            hideAllScreens();
+            document.getElementById('home-screen').classList.remove('hidden');
+            stopMusic();
+        }
+
         function showSubjectSelection() {
             hideAllScreens();
             document.getElementById('subject-selection').classList.remove('hidden');
@@ -731,7 +742,6 @@
             hideAllScreens();
             document.getElementById('mode-selection').classList.remove('hidden');
             document.getElementById('subject-filter').value = SUBJECTS[sub]?.name || "";
-            loadLeaderboard();
         }
 
         function showLeaderboard() {
@@ -798,7 +808,7 @@
 
                     tr.innerHTML = `
                         <td class="px-6 py-4 font-bold">${medal}${rank}</td>
-                        <td class="px-6 py-4">${doc.studentName}${isYou ? ' <span class="text-blue-600">(Bạn)</span>' : ''}</td>
+                        <td class="px-6 py-4">${escapeHtml(doc.studentName)}${isYou ? ' <span class="text-blue-600">(Bạn)</span>' : ''}</td>
                         <td class="px-6 py-4 text-center font-bold text-green-600">${doc.score.toFixed(1)}</td>
                         <td class="px-6 py-4 text-center">${doc.timeSeconds}s</td>
                         <td class="px-6 py-4">${doc.subject}</td>
@@ -823,9 +833,14 @@
         const savedTheme = localStorage.getItem('theme') || 'default';
         changeTheme(savedTheme);
 
-        document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('setting-overlay').classList.toggle('show'));
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            document.getElementById('setting-overlay').classList.toggle('show');
+        });
+
         document.getElementById('setting-overlay').addEventListener('click', e => {
-            if (e.target === document.getElementById('setting-overlay')) document.getElementById('setting-overlay').classList.remove('show');
+            if (e.target === document.getElementById('setting-overlay')) {
+                document.getElementById('setting-overlay').classList.remove('show');
+            }
         });
 
         function setMode(mode) {
@@ -880,12 +895,17 @@
             const id = extractYouTubeID(musicLink);
             if (!id) return;
             const iframe = document.createElement('iframe');
-            iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0`;
-            iframe.allow = 'autoplay';
+            iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0&mute=0`;
+            iframe.allow = 'autoplay; encrypted-media';
             iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;';
             document.body.appendChild(iframe);
             currentMusicIframe = iframe;
             document.getElementById('music-bar').style.display = 'flex';
+
+            const vol = parseInt(document.getElementById('volume-slider').value);
+            setTimeout(() => {
+                iframe.contentWindow?.postMessage(`{"volume":${vol/100}}`, "*");
+            }, 1500);
         }
 
         function stopMusic() {
@@ -911,6 +931,13 @@
             }
         }
 
+        document.getElementById('volume-slider').addEventListener('input', e => {
+            const vol = e.target.value / 100;
+            if (currentMusicIframe?.contentWindow) {
+                currentMusicIframe.contentWindow.postMessage(`{"volume":${vol}}`, "*");
+            }
+        });
+
         function openImage(src) {
             document.getElementById('modal-img').src = src;
             document.getElementById('image-modal').classList.add('show');
@@ -930,7 +957,7 @@
 
         function closeNoDataModal() {
             document.getElementById('no-data-modal').classList.remove('show');
-            location.reload();
+            goToHome();
         }
 
         async function startQuiz(mode) {
@@ -958,11 +985,16 @@
             const selectedDS = getRandom50PercentByType(dsQuestions);
             const selectedTL = getRandom50PercentByType(tlQuestions);
 
-            currentQuizQuestions = [...selectedTN, ...selectedDS, ...selectedTL].sort(() => Math.random() - 0.5);
+            currentQuizQuestions = [...selectedTN, ...selectedDS, ...selectedTL]
+                .sort(() => Math.random() - 0.5)
+                .map(q => {
+    if (q.type === 'DS' || q.type.includes('ĐS')) return q;
+    return shuffleOptions(q);
+});
 
             if (currentQuizQuestions.length === 0) {
                 showInfoModal("Thông báo", "Không có câu hỏi nào khả dụng!");
-                location.reload();
+                goToHome();
                 return;
             }
 
@@ -978,33 +1010,27 @@
         }
 
         function renderOptions(q, idx, isChallenge = false) {
-            const shuffledQ = shuffleOptions(q);
-            let html = `<div class="flex flex-col gap-5 mt-6" data-correct="${shuffledQ.correct}">`;
+            let html = `<div class="flex flex-col gap-5 mt-6" data-correct="${Number.isInteger(q.correct) ? q.correct : 0}">`;
 
-            shuffledQ.options.forEach((rawOpt, i) => {
-                let opt = rawOpt;
-                if (currentSubject === 'tieng-anh') {
-                    opt = rawOpt.replace(/\[underline\](.*?)\[\/underline\]/g, '<u>$1</u>');
+            q.options.forEach((rawOpt, i) => {
+                let opt = (rawOpt || '').trim();
+
+                if (/^[A-D]\.\s*/i.test(opt)) {
+                    opt = opt.replace(/^[A-D]\.\s*/i, '').trim();
                 }
 
                 let letter;
-                if (shuffledQ.type.includes('DS') || shuffledQ.type.includes('ĐS') || shuffledQ.type === 'DUNGSAI') {
+                if (q.type.includes('DS') || q.type.includes('ĐS') || q.type === 'DUNGSAI') {
                     letter = i === 0 ? 'Đ' : 'S';
                 } else {
-                    const match = opt.match(/^([A-D])\.?\s*(.*)$/i);
-                    if (match) {
-                        letter = match[1].toUpperCase();
-                        opt = match[2].trim() || '(Nội dung trống)';
-                    } else {
-                        letter = String.fromCharCode(65 + i);
-                    }
+                    letter = String.fromCharCode(65 + i);
                 }
 
                 html += `
                     <label class="option min-h-[60px] items-start">
                         <input type="radio" name="${isChallenge ? 'challenge_q' : 'q'+idx}" value="${i}">
                         <span class="letter">${letter}.</span>
-                        <span class="flex-1">${opt}</span>
+                        <span class="flex-1">${escapeHtml(opt) || '(Đáp án trống)'}</span>
                     </label>`;
             });
 
@@ -1031,7 +1057,7 @@
                     html += `<input type="text" name="q${idx}" class="w-full mt-6 p-5 border-2 rounded-xl text-lg focus:border-[var(--primary-color)]" placeholder="Nhập đáp án...">`;
                 }
 
-                html += `<div class="explanation hidden mt-8 text-base italic text-gray-700 border-l-4 border-gray-300 pl-5">${q.explain || '(không có giải thích)'}</div>`;
+                html += `<div class="explanation hidden mt-8 text-base italic text-gray-700 border-l-4 border-gray-300 pl-5">${escapeHtml(q.explain || '(không có giải thích)')}</div>`;
                 card.innerHTML = html;
                 container.appendChild(card);
             });
@@ -1058,7 +1084,7 @@
                 if (q.options?.length) {
                     const choiceIndex = radio ? parseInt(radio.value) : -1;
                     const optionsContainer = card.querySelector('.flex.flex-col.gap-5.mt-6');
-                    const shuffledCorrect = parseInt(optionsContainer.dataset.correct);
+                    const shuffledCorrect = parseInt(optionsContainer ? optionsContainer.dataset.correct : '0');
                     isCorrect = choiceIndex === shuffledCorrect;
 
                     card.querySelectorAll('.option').forEach((label, i) => {
@@ -1087,7 +1113,7 @@
                 <h2 class="text-4xl font-bold text-[var(--primary-color)] mb-8">KẾT QUẢ</h2>
                 <div class="text-6xl font-extrabold mb-10">${correctCount} / ${currentQuizQuestions.length} câu đúng<br>
                 <span style="color:var(--success-color)">Điểm: ${score}</span></div>
-                <button onclick="location.reload()" class="submit-btn">Làm lại</button>
+                <button onclick="goToHome()" class="submit-btn">Về trang chính</button>
             `;
             document.getElementById('practice-result').classList.remove('hidden');
             document.getElementById('submit-practice').classList.add('hidden');
@@ -1105,7 +1131,7 @@
                         <span class="text-2xl">Thời gian: ${timeTaken} giây</span>
                     </div>
                     <div class="flex gap-4 justify-center mt-12">
-                        <button onclick="location.reload()" class="submit-btn">Làm lại</button>
+                        <button onclick="goToHome()" class="submit-btn">Về trang chính</button>
                     </div>
                 `;
                 document.getElementById('submit-current').classList.add('hidden');
@@ -1138,38 +1164,39 @@
         document.getElementById('submit-current').addEventListener('click', async () => {
             const q = currentQuizQuestions[currentIndex];
             let isCorrect = false;
+            let userChoiceIndex = -1;
+            let correctDisplay = '';
 
             if (q.options && q.options.length > 0) {
-                const selected = document.querySelector('input[name="challenge_q"]:checked');
+                const selected = document.querySelector('#current-question input[name="challenge_q"]:checked');
                 if (!selected) return showInfoModal("Chưa chọn", "Vui lòng chọn đáp án!");
-                const choiceIndex = parseInt(selected.value);
+                userChoiceIndex = parseInt(selected.value);
 
                 const optionsContainer = document.querySelector('#current-question .flex.flex-col.gap-5.mt-6');
-                const shuffledCorrect = parseInt(optionsContainer ? optionsContainer.dataset.correct : '0');
-                isCorrect = choiceIndex === shuffledCorrect;
+                const correctAfterShuffle = parseInt(optionsContainer ? optionsContainer.dataset.correct : '0');
+                isCorrect = userChoiceIndex === correctAfterShuffle;
 
-                document.querySelectorAll('.option').forEach(label => {
+                document.querySelectorAll('#current-question .option').forEach(label => {
                     const i = parseInt(label.querySelector('input').value);
-                    if (i === shuffledCorrect) label.classList.add('bg-green-100', 'border-green-500');
-                    if (i === choiceIndex && !isCorrect) label.classList.add('bg-red-100', 'border-red-500');
+                    if (i === correctAfterShuffle) label.classList.add('bg-green-100', 'border-green-500');
+                    if (i === userChoiceIndex && !isCorrect) label.classList.add('bg-red-100', 'border-red-500');
                     label.querySelector('input').disabled = true;
                 });
+
+                correctDisplay = String.fromCharCode(65 + correctAfterShuffle) + ".";
             } else {
                 const input = document.getElementById('challenge-answer');
                 if (!input.value.trim()) return showInfoModal("Chưa nhập", "Vui lòng nhập đáp án!");
                 isCorrect = input.value.trim().toLowerCase() === String(q.correct).toLowerCase();
                 input.disabled = true;
                 input.style.borderColor = isCorrect ? 'var(--success-color)' : 'var(--danger-color)';
+                correctDisplay = q.correct;
             }
 
             const feedback = document.getElementById('challenge-feedback');
-            let correctDisplay = q.options && q.options.length > 0 
-                ? (q.type.includes('DS') || q.type.includes('ĐS') ? (q.correct === 0 ? 'Đúng' : 'Sai') : String.fromCharCode(65 + q.correct))
-                : q.correct;
-
             feedback.innerHTML = isCorrect
-                ? `<strong class="text-3xl">ĐÚNG RỒI 🎉</strong><br><div class="mt-4">${q.explain || '(không có giải thích)'}</div>`
-                : `<strong class="text-3xl text-[var(--danger-color)]">SAI RỒI 😞</strong><br>Đáp án đúng: ${correctDisplay}<br><div class="mt-4">${q.explain || '(không có giải thích)'}</div>`;
+                ? `<strong class="text-3xl">ĐÚNG RỒI 🎉</strong><br><div class="mt-4">${escapeHtml(q.explain || '(không có giải thích)')}</div>`
+                : `<strong class="text-3xl text-[var(--danger-color)]">SAI RỒI 😞</strong><br>Đáp án đúng: ${correctDisplay}<br><div class="mt-4">${escapeHtml(q.explain || '(không có giải thích)')}</div>`;
 
             feedback.className = `feedback ${isCorrect ? 'correct' : 'wrong'} show`;
             document.getElementById('submit-current').classList.add('hidden');
@@ -1178,7 +1205,7 @@
                 stopTimer();
                 const score = Math.round((currentIndex / currentQuizQuestions.length) * 10 * 100) / 100;
                 await recordResult(currentIndex, currentQuizQuestions.length, 'challenge', score);
-                feedback.innerHTML += `<br><br><button onclick="location.reload()" class="submit-btn mt-4 bg-red-600">Làm lại từ đầu</button>`;
+                feedback.innerHTML += `<br><br><button onclick="goToHome()" class="submit-btn mt-4 bg-red-600">Về trang chính</button>`;
             } else {
                 document.getElementById('next-question').classList.remove('hidden');
                 currentIndex++;
@@ -1188,46 +1215,25 @@
         document.getElementById('next-question').addEventListener('click', showChallengeQuestion);
 
         document.addEventListener('keydown', function(e) {
-            if (!document.getElementById('quiz-area').classList.contains('hidden')) {
-                if (document.activeElement.tagName === 'INPUT' && document.activeElement.type === 'text') {
-                    return;
-                }
+            if (document.getElementById('quiz-area').classList.contains('hidden')) return;
+            if (document.activeElement.tagName === 'INPUT' && document.activeElement.type === 'text') return;
 
-                if (e.key === '1') {
-                    const option = document.querySelector('input[value="0"]');
-                    if (option) option.checked = true;
-                }
-                else if (e.key === '2') {
-                    const option = document.querySelector('input[value="1"]');
-                    if (option) option.checked = true;
-                }
-                else if (e.key === '3') {
-                    const option = document.querySelector('input[value="2"]');
-                    if (option) option.checked = true;
-                }
-                else if (e.key === '4') {
-                    const option = document.querySelector('input[value="3"]');
-                    if (option) option.checked = true;
-                }
-                else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const submitBtnPractice = document.getElementById('submit-practice');
-                    const submitBtnCurrent = document.getElementById('submit-current');
+            const challengeVisible = !document.getElementById('challenge-mode').classList.contains('hidden');
+            const prefix = challengeVisible ? '#current-question ' : '';
 
-                    if (!submitBtnPractice.classList.contains('hidden')) {
-                        submitBtnPractice.click();
-                    } else if (!submitBtnCurrent.classList.contains('hidden')) {
-                        submitBtnCurrent.click();
-                    }
+            if (e.key === '1') document.querySelector(`${prefix}input[value="0"]`)?.click();
+            else if (e.key === '2') document.querySelector(`${prefix}input[value="1"]`)?.click();
+            else if (e.key === '3') document.querySelector(`${prefix}input[value="2"]`)?.click();
+            else if (e.key === '4') document.querySelector(`${prefix}input[value="3"]`)?.click();
+            else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (challengeVisible) {
+                    document.getElementById('submit-current')?.click();
+                } else {
+                    document.getElementById('submit-practice')?.click();
                 }
             }
         });
-
-        if (studentName) {
-            document.getElementById('student-name-display').textContent = `Học sinh: ${studentName}`;
-        } else {
-            document.getElementById('name-modal').classList.add('show');
-        }
 
         showMusicConfirm();
     </script>
