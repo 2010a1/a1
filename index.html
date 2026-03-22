@@ -278,12 +278,12 @@
             <div class="mb-8">
                 <p class="font-medium mb-4">Chọn màu chủ đề</p>
                 <div class="flex justify-center gap-4 flex-wrap">
-                    <div class="theme-btn active" style="background:#1C3FAA" data-theme="default" onclick="changeTheme('default')"></div>
-                    <div class="theme-btn" style="background:#EC4899" data-theme="pink" onclick="changeTheme('pink')"></div>
-                    <div class="theme-btn" style="background:#10B981" data-theme="green" onclick="changeTheme('green')"></div>
-                    <div class="theme-btn" style="background:#3B82F6" data-theme="blue" onclick="changeTheme('blue')"></div>
-                    <div class="theme-btn" style="background:#EF4444" data-theme="red" onclick="changeTheme('red')"></div>
-                    <div class="theme-btn" style="background:#8B5CF6" data-theme="purple" onclick="changeTheme('purple')"></div>
+                    <div class="theme-btn active" style="background:#1C3FAA;width:50px;height:50px;border-radius:50%;cursor:pointer;" data-theme="default" onclick="changeTheme('default')"></div>
+                    <div class="theme-btn" style="background:#EC4899;width:50px;height:50px;border-radius:50%;cursor:pointer;" data-theme="pink" onclick="changeTheme('pink')"></div>
+                    <div class="theme-btn" style="background:#10B981;width:50px;height:50px;border-radius:50%;cursor:pointer;" data-theme="green" onclick="changeTheme('green')"></div>
+                    <div class="theme-btn" style="background:#3B82F6;width:50px;height:50px;border-radius:50%;cursor:pointer;" data-theme="blue" onclick="changeTheme('blue')"></div>
+                    <div class="theme-btn" style="background:#EF4444;width:50px;height:50px;border-radius:50%;cursor:pointer;" data-theme="red" onclick="changeTheme('red')"></div>
+                    <div class="theme-btn" style="background:#8B5CF6;width:50px;height:50px;border-radius:50%;cursor:pointer;" data-theme="purple" onclick="changeTheme('purple')"></div>
                 </div>
             </div>
             <div class="mb-8">
@@ -305,7 +305,8 @@
                     <input type="range" id="volume-slider" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
                 </div>
             </div>
-            <button onclick="logout()" class="w-full mt-8 py-4 bg-gray-800 text-white rounded-2xl font-bold shadow">Đăng xuất (Xóa tên)</button>
+            <button onclick="resetProgress()" class="w-full mt-8 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-bold shadow">Reset tiến độ câu hỏi (của bạn)</button>
+            <button onclick="logout()" class="w-full mt-4 py-4 bg-gray-800 text-white rounded-2xl font-bold shadow">Đăng xuất (Xóa tên)</button>
         </div>
     </div>
 
@@ -463,6 +464,9 @@
                     Chưa có ai hoàn thành thử thách môn này.<br>Hãy là người đầu tiên nhé! 🚀
                 </div>
 
+                <div id="leaderboard-loading" class="hidden text-center py-16 text-gray-600 text-lg">Đang tải bảng xếp hạng...</div>
+                <div id="leaderboard-error" class="hidden text-center py-16 text-red-600 text-lg"></div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full hidden" id="leaderboard-table">
                         <thead>
@@ -492,6 +496,7 @@
             .setProject(APPWRITE_PROJECT_ID);
 
         const databases = new Appwrite.Databases(client);
+        const Query = Appwrite.Query;
 
         const SUBJECTS = {
             "sinh-hoc": { name: "Sinh học", file: "https://raw.githubusercontent.com/2010a1/10a1/main/questions/sinh-hoc.txt" },
@@ -511,18 +516,29 @@
         let studentName = localStorage.getItem('studentName') || '';
         let musicLink = localStorage.getItem('musicLink') || '';
         let currentMusicIframe = null;
+        let practiceSubmitted = false;
+        let challengeSubmitted = false;
 
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+        function getUserPrefix() {
+            return (studentName || 'guest').replace(/\s+/g, '_').toLowerCase();
         }
 
         function getUsedKey(type) {
-            return `used_${currentSubject || 'default'}_${type}_${studentName.replace(/\s+/g, '_').toLowerCase()}`;
+            return `used_${currentSubject || 'default'}_${type}_${getUserPrefix()}`;
+        }
+
+        function getCorrectKey(type) {
+            return `correct_${currentSubject || 'default'}_${type}_${getUserPrefix()}`;
         }
 
         function getRandom50PercentByType(typeQuestions) {
@@ -532,22 +548,32 @@
             if (typeQuestions[0].type.toUpperCase().includes('TN')) typeKey = 'TN';
             else if (typeQuestions[0].type.toUpperCase().includes('DS') || typeQuestions[0].type.includes('ĐS') || typeQuestions[0].type === 'DUNGSAI') typeKey = 'DS';
 
-            const key = getUsedKey(typeKey);
-            let used = JSON.parse(localStorage.getItem(key)) || [];
+            const usedKey = getUsedKey(typeKey);
+            const correctKey = getCorrectKey(typeKey);
 
-            if (used.length >= Math.floor(typeQuestions.length * 0.5)) {
-                localStorage.removeItem(key);
-                used = [];
+            let used = JSON.parse(localStorage.getItem(usedKey)) || [];
+            let correct = JSON.parse(localStorage.getItem(correctKey)) || [];
+
+            const need = Math.max(1, Math.ceil(typeQuestions.length * 0.5));
+
+            let available = typeQuestions.filter(q => !correct.includes(q.question));
+
+            if (available.length < need) {
+                const extra = typeQuestions.filter(q => correct.includes(q.question) && !used.includes(q.question));
+                available = [...available, ...extra];
             }
 
-            const available = typeQuestions.map((q, i) => ({q, i})).filter(x => !used.includes(x.i));
-            const need = Math.max(1, Math.ceil(typeQuestions.length * 0.5));
+            if (available.length < need) {
+                const fallback = typeQuestions.filter(q => !used.includes(q.question));
+                available = [...available, ...fallback];
+            }
+
             const selected = available.sort(() => Math.random() - 0.5).slice(0, need);
 
-            const newUsed = [...used, ...selected.map(x => x.i)];
-            localStorage.setItem(key, JSON.stringify([...new Set(newUsed)]));
+            const newUsed = [...used, ...selected.map(q => q.question)];
+            localStorage.setItem(usedKey, JSON.stringify([...new Set(newUsed)]));
 
-            return selected.map(item => item.q);
+            return selected;
         }
 
         function shuffleOptions(question) {
@@ -573,7 +599,12 @@
                 const url = SUBJECTS[currentSubject]?.file;
                 if (!url) throw new Error("Không tìm thấy file câu hỏi");
 
-                const res = await fetch(url);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const res = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
                 const text = await res.text();
@@ -584,7 +615,10 @@
 
                         const parts = line.split(';').map(s => s.trim());
 
-                        if (parts.length < 3) return null;
+                        if (parts.length < 3) {
+                            console.warn(`Câu hỏi lỗi format (bỏ qua): ${line}`);
+                            return null;
+                        }
 
                         let type = parts[0].toUpperCase();
                         let rawQuestion = parts[1];
@@ -655,7 +689,7 @@
                 return allQuestions.length > 0;
             } catch (err) {
                 console.error("Lỗi tải/parse:", err);
-                showInfoModal("Lỗi", "Không tải được câu hỏi: " + err.message);
+                showInfoModal("Lỗi", "Không tải được câu hỏi: " + (err.name === 'AbortError' ? 'Hết thời gian tải' : err.message));
                 return false;
             }
         }
@@ -677,6 +711,9 @@
             };
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
                 const res = await fetch(
                     `${APPWRITE_ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`,
                     {
@@ -685,14 +722,13 @@
                             'Content-Type': 'application/json',
                             'X-Appwrite-Project': APPWRITE_PROJECT_ID
                         },
-                        body: JSON.stringify({ documentId: 'unique()', data: payload })
+                        body: JSON.stringify({ documentId: 'unique()', data: payload }),
+                        signal: controller.signal
                     }
                 );
+                clearTimeout(timeoutId);
 
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.message || `HTTP ${res.status}`);
-                }
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 console.log("Lưu kết quả thành công");
             } catch (err) {
                 console.error("Lỗi lưu kết quả:", err);
@@ -729,7 +765,11 @@
         function goToHome() {
             hideAllScreens();
             document.getElementById('home-screen').classList.remove('hidden');
-            stopMusic();
+            // KHÔNG gọi stopMusic() → giữ nhạc nền khi về home
+            practiceSubmitted = false;
+            challengeSubmitted = false;
+            currentQuizQuestions = [];
+            currentIndex = 0;
         }
 
         function showSubjectSelection() {
@@ -758,21 +798,25 @@
             const table = document.getElementById('leaderboard-table');
             const placeholder = document.getElementById('leaderboard-placeholder');
             const empty = document.getElementById('leaderboard-empty');
+            const loading = document.getElementById('leaderboard-loading');
+            const errorDiv = document.getElementById('leaderboard-error');
 
-            tbody.innerHTML = 'Đang tải...';
+            tbody.innerHTML = '';
             placeholder.classList.add('hidden');
             empty.classList.add('hidden');
-            table.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+            loading.classList.remove('hidden');
+            table.classList.add('hidden');
 
             try {
                 const result = await databases.listDocuments(
                     DATABASE_ID,
                     COLLECTION_ID,
                     [
-                        Appwrite.Query.equal("subject", subject),
-                        Appwrite.Query.orderDesc("score"),
-                        Appwrite.Query.orderAsc("timeSeconds"),
-                        Appwrite.Query.limit(50)
+                        Query.equal("subject", subject),
+                        Query.orderDesc("score"),
+                        Query.orderAsc("timeSeconds"),
+                        Query.limit(50)
                     ]
                 );
 
@@ -789,12 +833,15 @@
                 const ranked = Object.values(bestPerUser).sort((a,b) => b.score - a.score || a.timeSeconds - b.timeSeconds);
 
                 tbody.innerHTML = '';
+                loading.classList.add('hidden');
+
                 if (ranked.length === 0) {
                     empty.classList.remove('hidden');
                     table.classList.add('hidden');
                     return;
                 }
 
+                table.classList.remove('hidden');
                 ranked.forEach((doc, idx) => {
                     const rank = idx + 1;
                     const tr = document.createElement('tr');
@@ -818,7 +865,9 @@
                 });
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = 'Lỗi tải bảng xếp hạng';
+                loading.classList.add('hidden');
+                errorDiv.textContent = 'Lỗi tải bảng xếp hạng: ' + (err.message || 'Không xác định');
+                errorDiv.classList.remove('hidden');
             }
         }
 
@@ -838,7 +887,7 @@
         });
 
         document.getElementById('setting-overlay').addEventListener('click', e => {
-            if (e.target === document.getElementById('setting-overlay')) {
+            if (e.target.id === 'setting-overlay') {
                 document.getElementById('setting-overlay').classList.remove('show');
             }
         });
@@ -878,7 +927,7 @@
         }
 
         function extractYouTubeID(url) {
-            const match = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=))([^"&?\/\s]{11})/i);
+            const match = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/shorts\/))([^"&?\/\s]{11})/i);
             return match ? match[1] : null;
         }
 
@@ -894,17 +943,22 @@
             stopMusic();
             const id = extractYouTubeID(musicLink);
             if (!id) return;
+
             const iframe = document.createElement('iframe');
-            iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0&mute=0`;
+            iframe.src = `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0`;
             iframe.allow = 'autoplay; encrypted-media';
             iframe.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;';
             document.body.appendChild(iframe);
             currentMusicIframe = iframe;
             document.getElementById('music-bar').style.display = 'flex';
 
-            const vol = parseInt(document.getElementById('volume-slider').value);
+            // Unmute sau 1.5s để tăng khả năng autoplay thành công
             setTimeout(() => {
-                iframe.contentWindow?.postMessage(`{"volume":${vol/100}}`, "*");
+                if (currentMusicIframe) {
+                    currentMusicIframe.contentWindow?.postMessage(
+                        JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*'
+                    );
+                }
             }, 1500);
         }
 
@@ -930,13 +984,6 @@
                 document.getElementById('music-confirm-modal').classList.add('show');
             }
         }
-
-        document.getElementById('volume-slider').addEventListener('input', e => {
-            const vol = e.target.value / 100;
-            if (currentMusicIframe?.contentWindow) {
-                currentMusicIframe.contentWindow.postMessage(`{"volume":${vol}}`, "*");
-            }
-        });
 
         function openImage(src) {
             document.getElementById('modal-img').src = src;
@@ -967,9 +1014,18 @@
             hideAllScreens();
             document.getElementById('quiz-area').classList.remove('hidden');
 
+            // Reset trạng thái
+            practiceSubmitted = false;
+            challengeSubmitted = false;
+            currentQuizQuestions = [];
+            currentIndex = 0;
+
+            // Ẩn cả hai mode trước khi show mode mới
+            document.getElementById('practice-mode').classList.add('hidden');
+            document.getElementById('challenge-mode').classList.add('hidden');
+
             currentMode = mode;
             startTime = Date.now();
-            currentIndex = 0;
 
             const hasData = await loadAndParseQuestions();
             if (!hasData) {
@@ -988,9 +1044,9 @@
             currentQuizQuestions = [...selectedTN, ...selectedDS, ...selectedTL]
                 .sort(() => Math.random() - 0.5)
                 .map(q => {
-    if (q.type === 'DS' || q.type.includes('ĐS')) return q;
-    return shuffleOptions(q);
-});
+                    if (q.type === 'DS' || q.type.includes('ĐS')) return q;
+                    return shuffleOptions(q);
+                });
 
             if (currentQuizQuestions.length === 0) {
                 showInfoModal("Thông báo", "Không có câu hỏi nào khả dụng!");
@@ -1010,7 +1066,9 @@
         }
 
         function renderOptions(q, idx, isChallenge = false) {
-            let html = `<div class="flex flex-col gap-5 mt-6" data-correct="${Number.isInteger(q.correct) ? q.correct : 0}">`;
+            if (!q.options || q.options.length === 0) return '';
+
+            let html = `<div class="flex flex-col gap-5 mt-6" data-correct="${parseInt(q.correct) || 0}">`;
 
             q.options.forEach((rawOpt, i) => {
                 let opt = (rawOpt || '').trim();
@@ -1047,7 +1105,7 @@
                 card.className = 'question-card';
 
                 let html = `<div class="question-num">Câu ${idx + 1}</div>`;
-                html += `<div class="question-text">${q.question}</div>`;
+                html += `<div class="question-text">${q.question}</div>`;  // KHÔNG escape → giữ <u>
 
                 if (q.image) html += `<img src="${q.image}" class="question-image" onclick="openImage('${q.image}')">`;
 
@@ -1064,9 +1122,13 @@
 
             document.getElementById('submit-practice').classList.remove('hidden');
             document.getElementById('practice-result').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         document.getElementById('submit-practice').addEventListener('click', async () => {
+            if (practiceSubmitted) return;
+            practiceSubmitted = true;
+
             let correctCount = 0;
             let allAnswered = true;
             const cards = document.querySelectorAll('#practice-questions .question-card');
@@ -1102,10 +1164,27 @@
                 }
 
                 card.querySelector('.explanation').classList.remove('hidden');
-                if (isCorrect) correctCount++;
+                if (isCorrect) {
+                    correctCount++;
+
+                    let typeKey = 'TL';
+                    if (q.type.toUpperCase().includes('TN')) typeKey = 'TN';
+                    else if (q.type.toUpperCase().includes('DS') || q.type.includes('ĐS') || q.type === 'DUNGSAI') typeKey = 'DS';
+
+                    const key = getCorrectKey(typeKey);
+                    let correctArr = JSON.parse(localStorage.getItem(key)) || [];
+
+                    if (!correctArr.includes(q.question)) {
+                        correctArr.push(q.question);
+                        localStorage.setItem(key, JSON.stringify([...new Set(correctArr)]));
+                    }
+                }
             });
 
-            if (!allAnswered) return showInfoModal("⚠️ Chưa hoàn thành", "Vui lòng trả lời tất cả câu hỏi!");
+            if (!allAnswered) {
+                practiceSubmitted = false;
+                return showInfoModal("⚠️ Chưa hoàn thành", "Vui lòng trả lời tất cả câu hỏi!");
+            }
 
             const score = Math.round((correctCount / currentQuizQuestions.length) * 10 * 100) / 100;
 
@@ -1145,7 +1224,7 @@
             const q = currentQuizQuestions[currentIndex];
             document.getElementById('challenge-progress').textContent = `Câu ${currentIndex + 1} / ${currentQuizQuestions.length}`;
 
-            let html = `<div class="question-text">${q.question}</div>`;
+            let html = `<div class="question-text">${q.question}</div>`;  // KHÔNG escape
 
             if (q.image) html += `<img src="${q.image}" class="question-image" onclick="openImage('${q.image}')">`;
 
@@ -1159,9 +1238,14 @@
             document.getElementById('submit-current').classList.remove('hidden');
             document.getElementById('next-question').classList.add('hidden');
             document.getElementById('challenge-feedback').classList.remove('show');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         document.getElementById('submit-current').addEventListener('click', async () => {
+            if (challengeSubmitted) return;
+            challengeSubmitted = true;
+
             const q = currentQuizQuestions[currentIndex];
             let isCorrect = false;
             let userChoiceIndex = -1;
@@ -1169,7 +1253,10 @@
 
             if (q.options && q.options.length > 0) {
                 const selected = document.querySelector('#current-question input[name="challenge_q"]:checked');
-                if (!selected) return showInfoModal("Chưa chọn", "Vui lòng chọn đáp án!");
+                if (!selected) {
+                    challengeSubmitted = false;
+                    return showInfoModal("Chưa chọn", "Vui lòng chọn đáp án!");
+                }
                 userChoiceIndex = parseInt(selected.value);
 
                 const optionsContainer = document.querySelector('#current-question .flex.flex-col.gap-5.mt-6');
@@ -1186,7 +1273,10 @@
                 correctDisplay = String.fromCharCode(65 + correctAfterShuffle) + ".";
             } else {
                 const input = document.getElementById('challenge-answer');
-                if (!input.value.trim()) return showInfoModal("Chưa nhập", "Vui lòng nhập đáp án!");
+                if (!input.value.trim()) {
+                    challengeSubmitted = false;
+                    return showInfoModal("Chưa nhập", "Vui lòng nhập đáp án!");
+                }
                 isCorrect = input.value.trim().toLowerCase() === String(q.correct).toLowerCase();
                 input.disabled = true;
                 input.style.borderColor = isCorrect ? 'var(--success-color)' : 'var(--danger-color)';
@@ -1201,14 +1291,27 @@
             feedback.className = `feedback ${isCorrect ? 'correct' : 'wrong'} show`;
             document.getElementById('submit-current').classList.add('hidden');
 
-            if (!isCorrect) {
+            if (isCorrect) {
+                let typeKey = 'TL';
+                if (q.type.toUpperCase().includes('TN')) typeKey = 'TN';
+                else if (q.type.toUpperCase().includes('DS') || q.type.includes('ĐS') || q.type === 'DUNGSAI') typeKey = 'DS';
+
+                const key = getCorrectKey(typeKey);
+                let correctArr = JSON.parse(localStorage.getItem(key)) || [];
+
+                if (!correctArr.includes(q.question)) {
+                    correctArr.push(q.question);
+                    localStorage.setItem(key, JSON.stringify([...new Set(correctArr)]));
+                }
+
+                document.getElementById('next-question').classList.remove('hidden');
+                currentIndex++;
+                challengeSubmitted = false;
+            } else {
                 stopTimer();
                 const score = Math.round((currentIndex / currentQuizQuestions.length) * 10 * 100) / 100;
                 await recordResult(currentIndex, currentQuizQuestions.length, 'challenge', score);
                 feedback.innerHTML += `<br><br><button onclick="goToHome()" class="submit-btn mt-4 bg-red-600">Về trang chính</button>`;
-            } else {
-                document.getElementById('next-question').classList.remove('hidden');
-                currentIndex++;
             }
         });
 
@@ -1235,7 +1338,14 @@
             }
         });
 
-        showMusicConfirm();
+        // Volume slider (hiện tại không hoạt động - comment giải thích)
+        document.getElementById('volume-slider').addEventListener('input', (e) => {
+            // Volume slider không hoạt động vì YouTube iframe không hỗ trợ postMessage setVolume
+            // Để fix thật sự cần chuyển sang dùng YT.Player API (đã load script nhưng chưa implement)
+            console.log('Volume thay đổi:', e.target.value, '(chưa áp dụng được cho iframe)');
+        });
+
+        setTimeout(showMusicConfirm, 800);
     </script>
 </body>
 </html>
