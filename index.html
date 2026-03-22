@@ -1322,86 +1322,85 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        document.getElementById('submit-current').addEventListener('click', async () => {
-            if (challengeSubmitted) return;
-            challengeSubmitted = true;
-            document.getElementById('submit-current').disabled = true;
+     document.getElementById('submit-current').addEventListener('click', async () => {
+    const submitBtn = document.getElementById('submit-current');
+    if (submitBtn.disabled) return;           // ngăn double click / race
 
-            const q = currentQuizQuestions[currentIndex];
-            let isCorrect = false;
-            let userChoiceIndex = -1;
-            let correctDisplay = '';
+    submitBtn.disabled = true;                // khóa ngay lập tức
 
-            if (q.options && q.options.length > 0) {
-                const selected = document.querySelector('#current-question input[name="challenge_q"]:checked');
-                if (!selected) {
-                    challengeSubmitted = false;
-                    document.getElementById('submit-current').disabled = false;
-                    return showInfoModal("Chưa chọn", "Vui lòng chọn đáp án!");
-                }
-                userChoiceIndex = parseInt(selected.value);
+    const q = currentQuizQuestions[currentIndex];
+    let isCorrect = false;
+    let userChoiceIndex = -1;
+    let correctDisplay = '';
 
-                const optionsContainer = document.querySelector('#current-question .flex.flex-col.gap-5.mt-6');
-                const correctAfterShuffle = Number.isInteger(q.correct) ? q.correct : 0;
-                isCorrect = userChoiceIndex === correctAfterShuffle;
+    // ── phần kiểm tra đáp án (giữ nguyên) ────────────────────────────────
+    if (q.options && q.options.length > 0) {
+        const selected = document.querySelector('#current-question input[name="challenge_q"]:checked');
+        if (!selected) {
+            submitBtn.disabled = false;
+            return showInfoModal("Chưa chọn", "Vui lòng chọn đáp án!");
+        }
+        userChoiceIndex = parseInt(selected.value);
 
-                document.querySelectorAll('#current-question .option').forEach(label => {
-                    const i = parseInt(label.querySelector('input').value);
-                    if (i === correctAfterShuffle) label.classList.add('bg-green-100', 'border-green-500');
-                    if (i === userChoiceIndex && !isCorrect) label.classList.add('bg-red-100', 'border-red-500');
-                    label.querySelector('input').disabled = true;
-                });
+        const correctAfterShuffle = Number.isInteger(q.correct) ? q.correct : 0;
+        isCorrect = userChoiceIndex === correctAfterShuffle;
 
-                correctDisplay = String.fromCharCode(65 + correctAfterShuffle) + ".";
-            } else {
-                const input = document.getElementById('challenge-answer');
-                if (!input.value.trim()) {
-                    challengeSubmitted = false;
-                    document.getElementById('submit-current').disabled = false;
-                    return showInfoModal("Chưa nhập", "Vui lòng nhập đáp án!");
-                }
-                const normalize = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-                const userAns = normalize(input.value);
-                const correctAns = normalize(String(q.correct));
-                isCorrect = userAns === correctAns;
-
-                input.disabled = true;
-                input.style.borderColor = isCorrect ? 'var(--success-color)' : 'var(--danger-color)';
-                correctDisplay = q.correct;
-            }
-
-            const feedback = document.getElementById('challenge-feedback');
-            feedback.innerHTML = isCorrect
-                ? `<strong class="text-3xl">ĐÚNG RỒI 🎉</strong><br><div class="mt-4">${escapeHtml(q.explain || '(không có giải thích)')}</div>`
-                : `<strong class="text-3xl text-[var(--danger-color)]">SAI RỒI 😞</strong><br>Đáp án đúng: ${correctDisplay}<br><div class="mt-4">${escapeHtml(q.explain || '(không có giải thích)')}</div>`;
-
-            feedback.className = `feedback ${isCorrect ? 'correct' : 'wrong'} show`;
-            document.getElementById('submit-current').classList.add('hidden');
-
-            if (isCorrect) {
-                let typeKey = 'TL';
-                if (q.type.toUpperCase().includes('TN')) typeKey = 'TN';
-                else if (q.type.toUpperCase().includes('DS') || q.type.includes('ĐS') || q.type === 'DUNGSAI') typeKey = 'DS';
-
-                const key = getCorrectKey(typeKey);
-                let correctArr = JSON.parse(localStorage.getItem(key)) || [];
-
-                if (!correctArr.includes(q.id)) {
-                    correctArr.push(q.id);
-                    localStorage.setItem(key, JSON.stringify([...new Set(correctArr)]));
-                }
-
-                document.getElementById('next-question').classList.remove('hidden');
-                currentIndex++;
-                challengeSubmitted = false;
-            } else {
-                stopTimer();
-                const score = Math.round((currentIndex / currentQuizQuestions.length) * 10 * 100) / 100;
-                await recordResult(currentIndex, currentQuizQuestions.length, 'challenge', score);
-                feedback.innerHTML += `<br><br><button onclick="goToHome()" class="submit-btn mt-4 bg-red-600">Về trang chính</button>`;
-            }
+        // highlight đáp án
+        document.querySelectorAll('#current-question .option').forEach(label => {
+            const i = parseInt(label.querySelector('input').value);
+            if (i === correctAfterShuffle) label.classList.add('bg-green-100', 'border-green-500');
+            if (i === userChoiceIndex && !isCorrect) label.classList.add('bg-red-100', 'border-red-500');
+            label.querySelector('input').disabled = true;
         });
 
+        correctDisplay = String.fromCharCode(65 + correctAfterShuffle) + ".";
+    } else {
+        const input = document.getElementById('challenge-answer');
+        if (!input.value.trim()) {
+            submitBtn.disabled = false;
+            return showInfoModal("Chưa nhập", "Vui lòng nhập đáp án!");
+        }
+        const normalize = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const userAns = normalize(input.value);
+        const correctAns = normalize(String(q.correct));
+        isCorrect = userAns === correctAns;
+
+        input.disabled = true;
+        input.style.borderColor = isCorrect ? 'var(--success-color)' : 'var(--danger-color)';
+        correctDisplay = q.correct;
+    }
+
+    // ── hiển thị feedback ────────────────────────────────────────────────
+    const feedback = document.getElementById('challenge-feedback');
+    feedback.innerHTML = isCorrect
+        ? `<strong class="text-3xl">ĐÚNG RỒI 🎉</strong><br><div class="mt-4">${escapeHtml(q.explain || '(không có giải thích)')}</div>`
+        : `<strong class="text-3xl text-[var(--danger-color)]">SAI RỒI 😞</strong><br>Đáp án đúng: ${correctDisplay}<br><div class="mt-4">${escapeHtml(q.explain || '(không có giải thích)')}</div>`;
+
+    feedback.className = `feedback ${isCorrect ? 'correct' : 'wrong'} show`;
+    submitBtn.classList.add('hidden');
+
+    if (isCorrect) {
+        // lưu câu đúng vào localStorage (giữ nguyên)
+        let typeKey = 'TL';
+        if (q.type.toUpperCase().includes('TN')) typeKey = 'TN';
+        else if (q.type.toUpperCase().includes('DS') || q.type.includes('ĐS') || q.type === 'DUNGSAI') typeKey = 'DS';
+
+        const key = getCorrectKey(typeKey);
+        let correctArr = JSON.parse(localStorage.getItem(key)) || [];
+        if (!correctArr.includes(q.id)) {
+            correctArr.push(q.id);
+            localStorage.setItem(key, JSON.stringify([...new Set(correctArr)]));
+        }
+
+        document.getElementById('next-question').classList.remove('hidden');
+        currentIndex++;
+    } else {
+        stopTimer();
+        const score = Math.round((currentIndex / currentQuizQuestions.length) * 10 * 100) / 100;
+        await recordResult(currentIndex, currentQuizQuestions.length, 'challenge', score);
+        feedback.innerHTML += `<br><br><button onclick="goToHome()" class="submit-btn mt-4 bg-red-600">Về trang chính</button>`;
+    }
+});
         document.getElementById('next-question').addEventListener('click', showChallengeQuestion);
 
         document.addEventListener('keydown', function(e) {
